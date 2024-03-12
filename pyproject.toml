@@ -25,8 +25,8 @@ dev = [
     "polars>=0.20.15",
     "numpy>=1.26.4",
     "fastapi>=0.110.0",
-    "dotenv>=0.0.5",
     "notebook>=7.1.1",
     "pytest>=8.1.1",
     "uvicorn>=0.28.0",
+    "python-dotenv>=1.0.1",
 ]

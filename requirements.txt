@@ -1,0 +1,8 @@
+scikit-learn>=1.4.1.post1
+pandas>=2.2.1
+polars>=0.20.15
+numpy>=1.26.4
+fastapi>=0.110.0
+python-dotenv>=1.0.1
+pytest>=8.1.1
+uvicorn>=0.28.0

@@ -1,0 +1,32 @@
+[project]
+name = "fraud-detection"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "Paolo Sofia", email = "paolosofia6@gmail.com"},
+]
+dependencies = []
+requires-python = ">=3.12"
+readme = "README.md"
+license = {text = "GPL-v3"}
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+
+[tool.pdm]
+distribution = true
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "scikit-learn>=1.4.1.post1",
+    "pandas>=2.2.1",
+    "polars>=0.20.15",
+    "numpy>=1.26.4",
+    "fastapi>=0.110.0",
+    "dotenv>=0.0.5",
+    "notebook>=7.1.1",
+    "pytest>=8.1.1",
+    "uvicorn>=0.28.0",
+]

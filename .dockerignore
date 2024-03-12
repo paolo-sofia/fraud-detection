@@ -1,0 +1,7 @@
+*/notebooks/*
+*/tests/*
+*/env*
+*/venv*
+*.log
+.git
+.gitignore

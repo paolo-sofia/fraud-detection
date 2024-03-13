@@ -18,20 +18,27 @@ def load_preprocessed_transactions() -> pl.LazyFrame:
         return pl.LazyFrame()
 
 
-def load_transactions() -> pl.LazyFrame:
-    """Loads and returns the transactions data.
+def load_transactions() -> tuple[pl.LazyFrame, bool]:
+    """Loads the transactions data.
 
-    Returns:
-        pl.LazyFrame: The loaded transactions' data.
+    Returns a tuple containing the transactions data as a `pl.LazyFrame` and a boolean value indicating whether the data
+    was preprocessed or not.
+
+    Raises:
+        FileNotFoundError: If the transactions data file is not found.
+
+    Examples:
+        >>> load_transactions()
+        (pl.LazyFrame, bool)
     """
     if not pathlib.Path(os.getenv("PROCESSED_TRANSACTIONS_PATH")).exists():
         try:
-            return pl.scan_csv(os.getenv("TRANSACTIONS_PATH"))
+            return pl.scan_csv(os.getenv("TRANSACTIONS_PATH")), False
         except FileNotFoundError as e:
             logger.error(e)
-            return pl.LazyFrame()
+            return pl.LazyFrame(), False
 
-    return load_preprocessed_transactions()
+    return load_preprocessed_transactions(), True
 
 
 def fill_nulls_categorical_columns(dataframe: pl.LazyFrame) -> pl.LazyFrame:
@@ -98,7 +105,14 @@ def load_and_preprocess_transactions() -> pl.LazyFrame:
     Returns:
         pl.LazyFrame: The preprocessed transactions' data.
     """
-    transactions: pl.LazyFrame = load_transactions()
+    transactions: pl.LazyFrame
+    is_processed: bool
+    transactions, is_processed = load_transactions()
+
+    if is_processed:
+        return transactions
+
     transactions = preprocess_transactions(transactions)
+    transactions = transactions.with_columns(pl.col("TransactionID").cast(pl.Int64))
     save_processed_transactions_to_file(transactions)
     return transactions

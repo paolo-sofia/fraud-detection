@@ -2,8 +2,8 @@ import os
 import pathlib
 
 import polars as pl
-from fraud_detection.preprocessing.identities import load_identities, logger
-from fraud_detection.preprocessing.transactions import load_transactions
+from fraud_detection.preprocessing.identities import load_and_preprocess_identities, logger
+from fraud_detection.preprocessing.transactions import load_and_preprocess_transactions
 from fraud_detection.utils.columns import IdentitiesColumns
 
 
@@ -23,8 +23,8 @@ def preprocess_data_for_training() -> pl.LazyFrame:
     if pathlib.Path(os.getenv("PROCESSED_DATA_PATH")).exists():
         return pl.scan_parquet(os.getenv("PROCESSED_DATA_PATH"))
 
-    identities: pl.LazyFrame = load_identities()
-    transactions: pl.LazyFrame = load_transactions()
+    identities: pl.LazyFrame = load_and_preprocess_identities()
+    transactions: pl.LazyFrame = load_and_preprocess_transactions()
 
     data: pl.LazyFrame = transactions.join(other=identities, on=IdentitiesColumns.TransactionID, how="left")
 

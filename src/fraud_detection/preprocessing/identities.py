@@ -20,23 +20,42 @@ def load_preprocessed_identities() -> pl.LazyFrame:
         return pl.LazyFrame()
 
 
-def load_identities() -> pl.LazyFrame:
-    """Loads and returns the identities data.
+def load_identities() -> tuple[pl.LazyFrame, bool]:
+    """Loads the identities data.
 
-    Returns:
-        pl.LazyFrame: The loaded identities' data.
+    Returns a tuple containing the identities data as a `pl.LazyFrame` and a boolean value indicating whether the data
+    was preprocessed or not.
+
+    Raises:
+        FileNotFoundError: If the identities data file is not found.
+
+    Examples:
+        >>> load_identities()
+        (pl.LazyFrame, bool)
     """
     if not pathlib.Path(os.getenv("PROCESSED_IDENTITIES_PATH")).exists():
         try:
-            return pl.scan_csv(os.getenv("IDENTITIES_PATH"))
+            return pl.scan_csv(os.getenv("IDENTITIES_PATH")), False
         except FileNotFoundError as e:
             logger.error(e)
-            return pl.LazyFrame()
+            return pl.LazyFrame(), False
 
-    return load_preprocessed_identities()
+    return load_preprocessed_identities(), True
 
 
 def fill_nulls_categorical_columns(dataframe: pl.LazyFrame) -> pl.LazyFrame:
+    """Fills null values in categorical columns of the given dataframe.
+
+    Args:
+        dataframe: The input dataframe containing categorical columns with null values.
+
+    Returns:
+        A new dataframe with the null values in categorical columns filled.
+
+    Examples:
+        >>> fill_nulls_categorical_columns(dataframe)
+        pl.LazyFrame
+    """
     unknown_columns: list[str] = [
         # IdentitiesColumns.DeviceInfo,
         IdentitiesColumns.DeviceType,
@@ -116,7 +135,7 @@ def process_id_31(identities: pl.LazyFrame) -> pl.LazyFrame:
         .str.replace_all(pattern="for android", value="")
         .str.strip_chars()
         .fill_null("unknown")
-        .alias("id_31")
+        .alias(IdentitiesColumns.id_31)
     )
 
 
@@ -207,7 +226,14 @@ def load_and_preprocess_identities() -> pl.LazyFrame:
     Returns:
         pl.LazyFrame: The preprocessed identities' data.
     """
-    identities: pl.LazyFrame = load_identities()
+    identities: pl.LazyFrame
+    is_processed: bool
+    identities, is_processed = load_identities()
+
+    if is_processed:
+        return identities
+
     identities = preprocess_identities(identities)
+    identities = identities.with_columns(pl.col(IdentitiesColumns.TransactionID).cast(pl.Int64))
     save_processed_identities_to_file(identities)
     return identities

@@ -11,6 +11,15 @@ load_dotenv()
 logger = logging.getLogger("fraud-detection")
 
 
+def load_preprocessed_identities() -> pl.LazyFrame:
+    logger.info(f"Loading preprocessed identities from {os.getenv('IDENTITIES_PATH')}")
+    try:
+        return pl.scan_parquet(os.getenv("PROCESSED_IDENTITIES_PATH"))
+    except FileNotFoundError as e:
+        logger.error(e)
+        return pl.LazyFrame()
+
+
 def load_identities() -> pl.LazyFrame:
     """Loads and returns the identities data.
 
@@ -24,12 +33,7 @@ def load_identities() -> pl.LazyFrame:
             logger.error(e)
             return pl.LazyFrame()
 
-    logger.info(f"Loading preprocessed identities from {os.getenv('IDENTITIES_PATH')}")
-    try:
-        return pl.scan_parquet(os.getenv("PROCESSED_IDENTITIES_PATH"))
-    except FileNotFoundError as e:
-        logger.error(e)
-        return pl.LazyFrame()
+    return load_preprocessed_identities()
 
 
 def fill_nulls_categorical_columns(dataframe: pl.LazyFrame) -> pl.LazyFrame:
@@ -109,7 +113,7 @@ def process_id_31(identities: pl.LazyFrame) -> pl.LazyFrame:
         .then(pl.lit("unknown"))
         .otherwise(pl.col(IdentitiesColumns.id_31).str.to_lowercase().str.extract(pattern="(^[^\\d]+)"))
         .str.replace_all(pattern="generic", value="")
-        .str.replace_all("for android", "")
+        .str.replace_all(pattern="for android", value="")
         .str.strip_chars()
         .fill_null("unknown")
         .alias("id_31")
@@ -188,7 +192,8 @@ def save_processed_identities_to_file(identities: pl.LazyFrame) -> None:
     """
     if pathlib.Path(os.getenv("PROCESSED_IDENTITIES_PATH")).exists():
         logger.info(
-            f"Identities have already been processed and saved to {os.getenv('PROCESSED_IDENTITIES_PATH')}, skipping saving to disk."
+            f"Identities have already been processed and saved to {os.getenv('PROCESSED_IDENTITIES_PATH')}, "
+            f"skipping saving to disk."
         )
         return
 

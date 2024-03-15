@@ -76,13 +76,30 @@ def fill_nulls_categorical_columns(dataframe: pl.LazyFrame) -> pl.LazyFrame:
         IdentitiesColumns.id_29,
     ]
 
-    return dataframe.with_columns(
-        pl.col(IdentitiesColumns.id_23).fill_null("ip_proxy:hidden").str.to_lowercase().alias(IdentitiesColumns.id_23),
-        pl.col(IdentitiesColumns.id_34).fill_null("match_status:-1").str.to_lowercase().alias(IdentitiesColumns.id_34),
-        *[pl.col(col).fill_null("unknown").str.to_lowercase().alias(col) for col in unknown_columns],
-        *[pl.col(col).fill_null(pl.col(col).mode().str.to_lowercase().alias(col)) for col in mode_columns],
-        *[pl.col(col).fill_null("not_found").str.to_lowercase().alias(col) for col in not_found_columns],
-    )
+    transforms: list[pl.Expr] = []
+    for column in dataframe.columns:
+        if column == IdentitiesColumns.id_23:
+            transforms.append(
+                pl.col(IdentitiesColumns.id_23)
+                .fill_null("ip_proxy:hidden")
+                .str.to_lowercase()
+                .alias(IdentitiesColumns.id_23)
+            )
+        elif column == IdentitiesColumns.id_34:
+            transforms.append(
+                pl.col(IdentitiesColumns.id_34)
+                .fill_null("match_status:-1")
+                .str.to_lowercase()
+                .alias(IdentitiesColumns.id_34)
+            )
+        elif column in unknown_columns:
+            transforms.append(pl.col(column).fill_null("unknown").str.to_lowercase().alias(column))
+        elif column in mode_columns:
+            transforms.append(pl.col(column).fill_null(pl.col(column).mode().str.to_lowercase().alias(column)))
+        elif column in not_found_columns:
+            transforms.append(pl.col(column).fill_null("not_found").str.to_lowercase().alias(column))
+
+    return dataframe.with_columns(*transforms)
 
 
 def process_id_30(identities: pl.LazyFrame) -> pl.LazyFrame:
@@ -101,13 +118,15 @@ def process_id_30(identities: pl.LazyFrame) -> pl.LazyFrame:
     Returns:
         pl.LazyFrame: The processed identities data with the id_30 column transformed.
     """
-    return identities.with_columns(
-        pl.col(IdentitiesColumns.id_30)
-        .str.to_lowercase()
-        .str.extract(pattern="(^[^\\d]+(\\d+))")
-        .fill_null("unknown")
-        .alias(IdentitiesColumns.id_30)
-    )
+    if IdentitiesColumns.id_30 in identities.columns:
+        return identities.with_columns(
+            pl.col(IdentitiesColumns.id_30)
+            .str.to_lowercase()
+            .str.extract(pattern="(^[^\\d]+(\\d+))")
+            .fill_null("unknown")
+            .alias(IdentitiesColumns.id_30)
+        )
+    return identities
 
 
 def process_id_31(identities: pl.LazyFrame) -> pl.LazyFrame:
@@ -127,16 +146,18 @@ def process_id_31(identities: pl.LazyFrame) -> pl.LazyFrame:
     Returns:
     pl.LazyFrame: The processed identities data with the id_30 column transformed.
     """
-    return identities.with_columns(
-        pl.when(pl.col(IdentitiesColumns.id_31).str.contains("/", literal=True))
-        .then(pl.lit("unknown"))
-        .otherwise(pl.col(IdentitiesColumns.id_31).str.to_lowercase().str.extract(pattern="(^[^\\d]+)"))
-        .str.replace_all(pattern="generic", value="")
-        .str.replace_all(pattern="for android", value="")
-        .str.strip_chars()
-        .fill_null("unknown")
-        .alias(IdentitiesColumns.id_31)
-    )
+    if IdentitiesColumns.id_31 in identities.columns:
+        return identities.with_columns(
+            pl.when(pl.col(IdentitiesColumns.id_31).str.contains("/", literal=True))
+            .then(pl.lit("unknown"))
+            .otherwise(pl.col(IdentitiesColumns.id_31).str.to_lowercase().str.extract(pattern="(^[^\\d]+)"))
+            .str.replace_all(pattern="generic", value="")
+            .str.replace_all(pattern="for android", value="")
+            .str.strip_chars()
+            .fill_null("unknown")
+            .alias(IdentitiesColumns.id_31)
+        )
+    return identities
 
 
 def process_id_33(identities: pl.LazyFrame) -> pl.LazyFrame:
@@ -164,17 +185,19 @@ def process_id_33(identities: pl.LazyFrame) -> pl.LazyFrame:
     Returns:
     pl.LazyFrame: The processed identities data with the id_30 column transformed.
     """
-    return identities.with_columns(
-        pl.col(IdentitiesColumns.id_33)
-        .fill_null("-1x-1")
-        .str.split("x")
-        .list.eval(pl.element().cast(pl.Int32, strict=False))
-        .list.to_struct(fields=[IdentitiesColumns.width, IdentitiesColumns.height])
-        .alias(IdentitiesColumns.id_33)
-    ).unnest(columns=[IdentitiesColumns.id_33])
+    if IdentitiesColumns.id_33 in identities.columns:
+        return identities.with_columns(
+            pl.col(IdentitiesColumns.id_33)
+            .fill_null("-1x-1")
+            .str.split("x")
+            .list.eval(pl.element().cast(pl.Int32, strict=False))
+            .list.to_struct(fields=[IdentitiesColumns.width, IdentitiesColumns.height])
+            .alias(IdentitiesColumns.id_33)
+        ).unnest(columns=[IdentitiesColumns.id_33])
+    return identities
 
 
-def preprocess_identities(identities: pl.LazyFrame) -> pl.LazyFrame:
+def preprocess_identities(identities: pl.LazyFrame | pl.DataFrame) -> pl.LazyFrame:
     """Preprocesses the identities data.
 
     Args:

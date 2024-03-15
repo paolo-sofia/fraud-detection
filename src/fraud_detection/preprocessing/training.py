@@ -2,9 +2,10 @@ import os
 import pathlib
 
 import polars as pl
-from fraud_detection.preprocessing.identities import load_and_preprocess_identities, logger
-from fraud_detection.preprocessing.transactions import load_and_preprocess_transactions
-from fraud_detection.utils.columns import IdentitiesColumns
+
+from src.fraud_detection.preprocessing.identities import load_and_preprocess_identities, logger
+from src.fraud_detection.preprocessing.transactions import load_and_preprocess_transactions
+from src.fraud_detection.utils.columns import IdentitiesColumns
 
 
 def save_processed_data_to_disk(data: pl.LazyFrame) -> None:
@@ -27,6 +28,8 @@ def preprocess_data_for_training() -> pl.LazyFrame:
     transactions: pl.LazyFrame = load_and_preprocess_transactions()
 
     data: pl.LazyFrame = transactions.join(other=identities, on=IdentitiesColumns.TransactionID, how="left")
+
+    data = data.with_columns(pl.col(pl.NUMERIC_DTYPES).shrink_dtype(), pl.col(pl.String).cast(pl.Categorical))
 
     save_processed_data_to_disk(data=data)
 

@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 import polars as pl
 import pytest
 from dotenv import load_dotenv
-from fraud_detection.preprocessing.training import (
+from src.fraud_detection.preprocessing.training import (
     load_identities,
     load_preprocessed_identities,
 )

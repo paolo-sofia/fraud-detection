@@ -50,13 +50,15 @@ def fill_nulls_categorical_columns(dataframe: pl.LazyFrame) -> pl.LazyFrame:
     Returns:
         pl.LazyFrame: The DataFrame with null values in categorical columns filled with "unknown".
     """
-    transforms: list[pl.Expr] = [pl.col(f"M{index}").fill_null("unknown") for index in range(1, 10)]
-    transforms.extend(pl.col(column).fill_null("unknown") for column in ["card4", "card6", "ProductCD"])
-    return dataframe.with_columns(
-        *transforms,
-        pl.col("R_emaildomain").str.split(".").list.first().fill_null("unknown"),
-        pl.col("P_emaildomain").str.split(".").list.first().fill_null("unknown"),
-    )
+    transforms: list[pl.Expr] = []
+
+    for column in dataframe.columns:
+        if column.startswith("M") or column in ["card4", "card6", "ProductCD"]:
+            transforms.append(pl.col(column).fill_null("unknown"))
+        elif column in {"R_emaildomain", "P_emaildomain"}:
+            transforms.append(pl.col(column).str.split(".").list.first().fill_null("unknown"))
+
+    return dataframe.with_columns(*transforms)
 
 
 def preprocess_transactions(transactions: pl.LazyFrame) -> pl.LazyFrame:

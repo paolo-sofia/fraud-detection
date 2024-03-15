@@ -5,12 +5,13 @@ import fastapi
 import numpy as np
 import pandas as pd
 import uvicorn
+from sklearnex import patch_sklearn
 
 from src.fraud_detection.inference.loaders import load_columns, load_model
 from src.fraud_detection.preprocessing.inference import prepare_data_for_inference
 
 app = fastapi.FastAPI(title="fraud-detection model", description="Api that performs fraud detection", version="1.0.0")
-
+patch_sklearn()
 model = load_model()
 columns = load_columns()
 

@@ -43,4 +43,6 @@ dev = [
     "dcor>=0.6",
     "daal4py>=2024.1.0",
     "scikit-learn-intelex>=2024.1.0",
+    "snakeviz>=2.2.0",
+    "robyn>=0.52.0",
 ]
